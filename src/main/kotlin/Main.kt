@@ -2,7 +2,6 @@ package com.theendercore
 
 import com.theendercore.data.Dependency
 import com.theendercore.data.Mod
-import com.theendercore.data.NoModFound
 import com.theendercore.data.RunData
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -84,20 +83,6 @@ fun main() {
         else log.info("No Dependencies updated!")
     } else log.warn("No mods!")
 
-
-    val deps = modManager.getAllDependencies().getOrNull()
-    if (!deps.isNullOrEmpty()) {
-        val modList = mutableListOf<String>()
-        deps.forEach {
-            val x = modManager.getMod(it.projectId).leftOrNull() ?: return@forEach
-            if (x is NoModFound) modList.add(it.projectId)
-        }
-        if (modList.isEmpty()) println("EMPT")
-        api.projects().get(modList).get().map { Mod(it) }.forEach {
-            log.info("Added mod from dep [{}]", it)
-            modManager.addMod(it)
-        }
-    } else println("!!")
 
 }
 
