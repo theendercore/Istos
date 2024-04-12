@@ -4,6 +4,7 @@ import com.theendercore.database.Mods
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import masecla.modrinth4j.endpoints.SearchEndpoint
+import masecla.modrinth4j.model.project.Project
 import masecla.modrinth4j.model.project.ProjectType
 import masecla.modrinth4j.model.project.SupportStatus
 
@@ -51,6 +52,28 @@ data class Mod(
         searchResult.latestVersion,
         searchResult.license,
         searchResult.gallery
+    )
+
+    constructor(project: Project) : this(
+        project.slug,
+        project.title,
+        project.description,
+        project.categories,
+        project.clientSide,
+        project.serverSide,
+        project.projectType,
+        project.downloads,
+        project.iconUrl,
+        project.id,
+        project.team,
+        project.additionalCategories,
+        project.versions,
+        project.followers,
+        Instant.fromEpochMilliseconds(project.published.toEpochMilli()),
+        Instant.fromEpochMilliseconds(project.updated.toEpochMilli()),
+        project.versions.first(),
+        project.license.name,
+        project.gallery.map { it.url }
     )
 
     constructor(simple: Mods) : this(

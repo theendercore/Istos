@@ -5,13 +5,16 @@ import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import com.theendercore.Database
 import com.theendercore.log
 
 sealed interface DomainError
 
 data class GenericError(val msg: String = "", val trace: String = "") : DomainError
+data class NoModFound(val msg: String) : DomainError
 interface ModManger {
+    fun getMod(id: String): Either<DomainError, Mod>
     fun getAllMods(): Either<DomainError, List<Mod>>
     fun deleteMod(mod: Mod): DomainError?
     fun addMod(mod: Mod): DomainError?
@@ -23,11 +26,11 @@ interface ModManger {
     fun deleteDependency(dep: Dependency): DomainError?
     fun addDependency(dep: Dependency): DomainError?
     fun updateDependency(dep: Dependency): DomainError?
-    fun isDependencyUpToDate(dep: Dependency): Boolean
+    fun isDependencyUpToDate(mod: Mod): Boolean
 
 }
 
-fun database(): ModManger {
+fun modManager(): ModManger {
     val driver = JdbcSqliteDriver("jdbc:sqlite:mods.db")
 //    Database.Schema.create(driver)
     val database = Database(driver)
@@ -35,6 +38,12 @@ fun database(): ModManger {
     val dependencies = database.dependenciesQueries
 
     return object : ModManger {
+        override fun getMod(id: String): Either<DomainError, Mod> = either {
+            val mod = mods.getModById(id).executeAsOneOrNull()
+            ensureNotNull(mod) { NoModFound("No mod found!") }
+            Mod(mod)
+        }
+
         override fun getAllMods(): Either<DomainError, List<Mod>> = either {
             val modList = mods.selectAll().executeAsList()
             ensure(modList.isNotEmpty()) { GenericError("No Mods Found!") }
@@ -54,7 +63,8 @@ fun database(): ModManger {
         override fun updateMod(mod: Mod): DomainError? = deleteMod(mod) ?: addMod(mod)
 
         override fun isModUpToDate(mod: Mod): Boolean = Either.catch {
-            mods.getModById(mod.projectId).executeAsOneOrNull() != null
+            val oldMod = mods.getModById(mod.projectId).executeAsOneOrNull() ?: return@catch false
+            oldMod.latestVersion >= mod.latestVersion
         }.getOrElse { log.info(it.stackTraceToString()); false }
 
         override fun getAllDependencies(): Either<DomainError, List<Dependency>> = either {
@@ -78,10 +88,9 @@ fun database(): ModManger {
         override fun updateDependency(dep: Dependency): DomainError? = deleteDependency(dep) ?: addDependency(dep)
 
 
-        override fun isDependencyUpToDate(dep: Dependency): Boolean = Either.catch {
-            dependencies.getDependencyById(dep.projectId).executeAsOneOrNull() != null
+        override fun isDependencyUpToDate(mod: Mod): Boolean = Either.catch {
+            val oldDep = dependencies.getDependencyById(mod.projectId).executeAsOneOrNull() ?: return@catch false
+            oldDep.version == mod.latestVersion
         }.getOrElse { log.info(it.stackTraceToString()); false }
-
-
     }
 }

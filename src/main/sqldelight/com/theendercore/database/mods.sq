@@ -20,6 +20,11 @@ CREATE TABLE mods (
     gallery text NOT NULL
 );
 
+getOne:
+SELECT *
+FROM mods
+WHERE projectId = :id;
+
 selectAll:
 SELECT *
 FROM mods;

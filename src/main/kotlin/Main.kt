@@ -1,18 +1,13 @@
 package com.theendercore
 
-import arrow.core.Either
-import arrow.core.getOrElse
+import com.theendercore.data.Dependency
 import com.theendercore.data.Mod
-import com.theendercore.data.ModManger
+import com.theendercore.data.NoModFound
 import com.theendercore.data.RunData
-import com.theendercore.data.database
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import masecla.modrinth4j.client.agent.UserAgent
 import masecla.modrinth4j.endpoints.SearchEndpoint
-import masecla.modrinth4j.main.ModrinthAPI
 import masecla.modrinth4j.model.project.ProjectType
 import masecla.modrinth4j.model.search.Facet
 import masecla.modrinth4j.model.search.FacetCollection
@@ -42,7 +37,7 @@ val query: SearchEndpoint.SearchRequest = SearchEndpoint.SearchRequest.builder()
             )
             .build()
     )
-    .limit(10)
+    .limit(60)
     .build()
 
 val toml = Toml {
@@ -64,49 +59,48 @@ fun main() {
         var count = 0
         results.hits.map { Mod(it) }.forEach {
             if (!modManager.isModUpToDate(it)) {
-                log.info("${it.title} not up to date or registered Updating!")
+                log.info("[${it.title}] not up to date or undocumented! Updating...")
                 modManager.addMod(it)?.let { err -> log.error(err.toString()); return@forEach }
                 count++
             }
         }
 
         if (count > 0) log.info("{} mods updated", count)
-    }
+    } else log.info("Not Time to update mods")
 
 
-    val x = api.projects().getProjectDependencies("trowel").get()
-    x.projects.forEach { println(it.title) }
-    x.versions.forEach { println(it.name) }
+    val mods = modManager.getAllMods().getOrNull()
+    if (!mods.isNullOrEmpty()) {
+        var count = 0
+        mods.forEach {
+            if (!modManager.isDependencyUpToDate(it)) {
+                log.info("[${it.title}] doesnt have the latest dependencies!")
+                val dep = api.projects().getProjectDependencies(it.slug).get()
+                modManager.addDependency(Dependency(it.projectId, it.latestVersion, dep.projects.map { p -> p.id }))
+                count++
+            }
+        }
+        if (count > 0) log.info("{} dependencies updated", count)
+        else log.info("No Dependencies updated!")
+    } else log.warn("No mods!")
+
+
+    val deps = modManager.getAllDependencies().getOrNull()
+    if (!deps.isNullOrEmpty()) {
+        val modList = mutableListOf<String>()
+        deps.forEach {
+            val x = modManager.getMod(it.projectId).leftOrNull() ?: return@forEach
+            if (x is NoModFound) modList.add(it.projectId)
+        }
+        if (modList.isEmpty()) println("EMPT")
+        api.projects().get(modList).get().map { Mod(it) }.forEach {
+            log.info("Added mod from dep [{}]", it)
+            modManager.addMod(it)
+        }
+    } else println("!!")
 
 }
 
 fun have6HoursPassed(lastRan: Instant): Boolean {
     return lastRan <= Clock.System.now().minus(6.hours)
 }
-
-fun dependencies(): Dependencies {
-
-//database.modsQeurries
-
-    val userAgent = UserAgent.builder()
-        .authorUsername("TheEnderCore")
-        .projectName("Istos")
-        .projectVersion("0.1.0")
-        .contact("theendercore@gmail.com")
-        .build()
-    log.info(userAgent.toString())
-    val runData = Either.catch {
-        toml.decodeFromString<RunData>(RunDataFile.readText())
-    }.getOrElse {
-        log.warn("$it\n ${it.stackTrace}")
-        return@getOrElse null
-    }
-
-    return Dependencies(
-        ModrinthAPI.rateLimited(userAgent, ""),
-        runData,
-        database()
-    )
-}
-
-data class Dependencies(val api: ModrinthAPI, val runData: RunData?, val database: ModManger)
