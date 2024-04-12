@@ -1,0 +1,23 @@
+CREATE TABLE dependencies (
+    projectId TEXT NOT NULL,
+    version TEXT NOT NULL,
+    items TEXT NOT NULL
+);
+
+selectAll:
+SELECT *
+FROM dependencies;
+
+delete:
+DELETE FROM dependencies
+WHERE projectId = :id;
+
+getDependencyById:
+SELECT *
+FROM dependencies
+WHERE projectId = :id;
+
+add:
+INSERT
+INTO dependencies (projectId, version, items)
+VALUES ?;

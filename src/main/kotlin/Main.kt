@@ -3,10 +3,13 @@ package com.theendercore
 import arrow.core.Either
 import arrow.core.getOrElse
 import com.theendercore.data.Mod
+import com.theendercore.data.ModManger
 import com.theendercore.data.RunData
+import com.theendercore.data.database
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import masecla.modrinth4j.client.agent.UserAgent
 import masecla.modrinth4j.endpoints.SearchEndpoint
 import masecla.modrinth4j.main.ModrinthAPI
@@ -54,7 +57,7 @@ fun main() {
 
     if (runData == null || have6HoursPassed(runData.lastRan)) {
         log.info("Making file!")
-//        RunDataFile.writeText(toml.encodeToString(RunData.new()))
+        RunDataFile.writeText(toml.encodeToString(RunData.new()))
 
         val results = api.search(query).get()
         log.info("[${results.limit}, ${results.offset}, ${results.totalHits}]")
@@ -70,21 +73,11 @@ fun main() {
         if (count > 0) log.info("{} mods updated", count)
     }
 
-    /*
 
-        val a = results.hits.map { SearchResultWrapper(it) }.map {
-            listOf(
-                it.title,
-                it.author,
-                it.projectType,
-                it.categories.filter { i -> filter.contains(i) }.joinToString(", "),
-                it.description.replace("\n", "  "),
-            ).joinToString(" | ")
+    val x = api.projects().getProjectDependencies("trowel").get()
+    x.projects.forEach { println(it.title) }
+    x.versions.forEach { println(it.name) }
 
-        }
-        a.forEach(::log.info)
-
-     */
 }
 
 fun have6HoursPassed(lastRan: Instant): Boolean {
