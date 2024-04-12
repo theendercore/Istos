@@ -74,26 +74,27 @@ data class Mod(
         simple.license,
         simple.gallery.split(",").map { it.trim() }
     )
-}
 
-fun Mods(original: Mod) = Mods(
-    original.slug,
-    original.title,
-    original.description,
-    original.categories.joinToString(","),
-    original.clientSide.toString(),
-    original.serverSide.toString(),
-    original.projectType.toString(),
-    original.downloads.toLong(),
-    original.iconUrl,
-    original.projectId,
-    original.author,
-    original.displayCategories.joinToString(","),
-    original.versions.joinToString(","),
-    original.follows.toLong(),
-    original.dateCreated.toString(),
-    original.dateModified.toString(),
-    original.latestVersion,
-    original.license,
-    original.gallery.joinToString(",")
-)
+    fun toMods() = Mods(
+        this.slug,
+        this.title,
+        this.description,
+        this.categories.joinToString(","),
+        this.clientSide.toString(),
+        this.serverSide.toString(),
+        this.projectType.toString(),
+        this.downloads.toLong(),
+        this.iconUrl,
+        this.projectId,
+        this.author,
+        this.displayCategories.joinToString(","),
+        this.versions.joinToString(","),
+        this.follows.toLong(),
+        this.dateCreated.toString(),
+        this.dateModified.toString(),
+        this.latestVersion,
+        this.license,
+        this.gallery.joinToString(",")
+    )
+
+}

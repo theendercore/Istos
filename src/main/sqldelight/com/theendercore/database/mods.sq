@@ -23,3 +23,16 @@ CREATE TABLE mods (
 selectAll:
 SELECT *
 FROM mods;
+
+delete:
+DELETE FROM mods
+WHERE projectId = :id;
+
+getModById:
+SELECT *
+FROM mods
+WHERE projectId = :id;
+
+add:
+INSERT INTO mods ( slug, title, description, categories, clientSide, serverSide, projectType, downloads, iconUrl, projectId, author, displayCategories, versions, follows, dateCreated, dateModified, latestVersion, license, gallery)
+VALUES ?;

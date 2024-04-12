@@ -2,7 +2,6 @@ package com.theendercore
 
 import arrow.core.Either
 import arrow.core.getOrElse
-import com.theendercore.DBManager.isUpToDate
 import com.theendercore.data.Mod
 import com.theendercore.data.RunData
 import kotlinx.datetime.Clock
@@ -40,7 +39,7 @@ val query: SearchEndpoint.SearchRequest = SearchEndpoint.SearchRequest.builder()
             )
             .build()
     )
-    .limit(1)
+    .limit(10)
     .build()
 
 val toml = Toml {
@@ -51,7 +50,7 @@ val log: Logger = LoggerFactory.getLogger("Istos")
 val RunDataFile = File("run-data.toml")
 
 fun main() {
-    val (api, runData) = dependencies()
+    val (api, runData, modManager) = dependencies()
 
     if (runData == null || have6HoursPassed(runData.lastRan)) {
         log.info("Making file!")
@@ -61,9 +60,9 @@ fun main() {
         log.info("[${results.limit}, ${results.offset}, ${results.totalHits}]")
         var count = 0
         results.hits.map { Mod(it) }.forEach {
-            if (!it.isUpToDate()) {
+            if (!modManager.isModUpToDate(it)) {
                 log.info("${it.title} not up to date or registered Updating!")
-                DBManager.updateMod(it)
+                modManager.addMod(it)?.let { err -> log.error(err.toString()); return@forEach }
                 count++
             }
         }
