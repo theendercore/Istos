@@ -1,0 +1,25 @@
+CREATE TABLE mods (
+    slug text NOT NULL,
+    title text NOT NULL,
+    description text NOT NULL,
+    categories text NOT NULL,
+    clientSide text NOT NULL,
+    serverSide text NOT NULL,
+    projectType text NOT NULL,
+    downloads integer NOT NULL,
+    iconUrl text NOT NULL,
+    projectId text NOT NULL,
+    author text NOT NULL,
+    displayCategories text NOT NULL,
+    versions text NOT NULL,
+    follows integer NOT NULL,
+    dateCreated text NOT NULL,
+    dateModified text NOT NULL,
+    latestVersion text NOT NULL,
+    license text NOT NULL,
+    gallery text NOT NULL
+);
+
+selectAll:
+SELECT *
+FROM mods;
