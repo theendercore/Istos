@@ -84,6 +84,23 @@ fun main() {
     } else log.warn("No mods!")
 
 
+    val deps = modManager.getAllDependencies().getOrNull() ?: return
+
+    val count = mutableMapOf<String, Int>()
+    deps.forEach { dep ->
+        dep.items.forEach {
+            if (it.isNotEmpty()) count[it] = (count[it] ?: 0) + 1
+        }
+    }
+
+    if (count.isEmpty()) log.info("empty!!! >:(")
+//    count.toList().sortedBy { it.second }.forEach { println(it) }
+
+    val newMods = api.projects().get(count.map { it.key }).get()
+    count.toList().sortedBy { it.second }.forEach { (id, count) ->
+        log.info("[{}] was depended on {} times!", newMods?.find { it.id == id }?.title ?: "---", count)
+    }
+
 }
 
 fun have6HoursPassed(lastRan: Instant): Boolean {
